@@ -35,7 +35,7 @@ std::vector< std::vector<std::vector<std::vector<double>>> >   AhatInitializing(
 
 				for (int k = 0; k != Graddirections; ++k) {
 
-					result[x][y][row][k] = Aatten[x][y][row][k+1]/ (5000*Aatten[x][y][row][0]);
+					result[x][y][row][k] = Aatten[x][y][row][k+1]/ (Aatten[x][y][row][0]);
 				}
 		
 			}
