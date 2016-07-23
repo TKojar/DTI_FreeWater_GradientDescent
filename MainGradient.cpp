@@ -1,6 +1,7 @@
-/** \file  MainGradient.cpp
-\brief C++ source file implementing classes for tensors.
-Copyright 2016 by Tomas Kojar
+/** \file  ELTensors.cpp
+\brief C++ source file initializing tensors.
+
+Copyright 2016 by Andrew Colinet,Tomas Kojar
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided
 that the following conditions are met:
@@ -33,9 +34,11 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "AhatInitializing.h"
 #include "EmbedInitial.h"
 
+
+
 int main() {
 
-	std::ofstream myfile("LSresults.csv");
+	std::ofstream myfile("LeastSquaresResults.csv");
 														//Physical variables
 	int bval = 1000;
 	double dwc = 0.003;
@@ -49,11 +52,12 @@ int main() {
 	//number of cells
 	const int nuframesxtemp = 102;
 	const int nuframesytemp = 102;
-	const int nuframesx = 3;
-	const int nuframesy = 3;
+	const int nuframesx = 102;
+	const int nuframesy = 102;
 	const int nuframesz = 60;
 	const int xGraddirections = 46;//Number of Gradient directions including the zero diffusion weight
 	const int Graddirections = 44;//Without the zero diffusion weight
+
 	//coordinates of voxel in deep White Matter (for initialization)
 	//std::vector<int> WM { (int)(nuframesxtemp/2),(int)(nuframesytemp/2),(int)(nuframesz/2) };
 
@@ -64,13 +68,19 @@ int main() {
 	std::cout << "line 39 "<<'\n';
 	//Initializing DTI data
 	std::ifstream mydtifile("DTIdataset3.csv");
-	std::vector< std::vector<std::vector<std::vector<double>>> > Aatten = CSVinto4Darray(mydtifile, nuframesx, nuframesy, nuframesz, xGraddirections);
+
+	std::vector< std::vector<std::vector<std::vector<double>>> > Aatten(nuframesx, std::vector<std::vector<std::vector<double> > >(nuframesy, std::vector<std::vector<double>>(nuframesz, std::vector<double >(xGraddirections))));
+	CSVinto4Darray(mydtifile, nuframesx, nuframesy, nuframesz, xGraddirections, Aatten);
+	
 	std::cout << WM[0] << WM[1]<<WM[2]<< '\n';
 	std::cout << "line 43 " << '\n';
+	
 	//Diffusion gradient Graddirections where the zero diffusion weight row vector was removed from the dataset
 	std::ifstream mybvecfile("bvec2DTI30.csv");
-	std::vector<std::vector<double>> DiffGradDir = CSVintoMatrix(mybvecfile, Graddirections);
+	std::vector<std::vector<double>> DiffGradDir;
+	CSVintoMatrix(mybvecfile, Graddirections, DiffGradDir);
 	std::cout << "line 47" << '\n';
+	
 	//b-values vector in case they are not a single value but vary in each gradient direction
 	//std::ifstream mybvalfile("bvalDTI30.csv");
 	//std::vector<double> bval = CSVintoVector(mybvalfile, Graddirections);
@@ -78,12 +88,8 @@ int main() {
 	
 	//initializing the physical data
 	ELInitialization Eli(nuframesx, nuframesy, nuframesz, Graddirections, bval, DiffGradDir, alpha, Awater, lmin, lmax, WM, WTR);
-
-
 	
-
-
-													//Variables needed for iterations
+								//Variables needed for iterations
 											
 													//mesh length
 	double dt = 0.01;
@@ -93,8 +99,9 @@ int main() {
 	double T = 5;
 														
 	//Attenuation vector at x,y,z with all Graddirections
-	std::vector< std::vector<std::vector<std::vector<double>>> > Ahat=AhatInitializing(Aatten, nuframesx, nuframesy, nuframesz, Graddirections);
-
+	std::vector< std::vector<std::vector<std::vector<double>>> > Ahat(nuframesx, std::vector<std::vector<std::vector<double>>>(nuframesy, std::vector<std::vector<double>>(nuframesz, std::vector<double >(Graddirections))));
+	AhatInitializing(Aatten, nuframesx, nuframesy, nuframesz, Graddirections, Ahat);
+	
 	std::cout << "line 72 " << '\n';
 												//Volume Fraction initialization and min, max
 	
@@ -126,10 +133,12 @@ int main() {
 	//First coordinate is the X^i and the other three are x,y,z respectively for time t_n+1
 	std::vector< std::vector<std::vector<std::vector<double>>> > embeddingmapXnplus1(9, std::vector<std::vector<std::vector<double>>>(nuframesx, std::vector<std::vector<double>>(nuframesy, std::vector<double >(nuframesz))));
 
-	std::cout <<"least squares"<< embeddingmapXn[4][1][1][4];
-	std::cout << "done";
-	
+	std::cout << "done before iteration";
+
 	/*
+	std::cout <<"least squares"<< embeddingmapXn[4][1][1][4];
+
+	
 	for (int i = 3; i != 9; i++) {
 		for (int x = 0; x != nuframesx; x++) {
 			for (int y = 0; y != nuframesy; y++) {
@@ -142,10 +151,15 @@ int main() {
 			myfile << '\n';
 		}
 		myfile << '\n';
-	}*/
+	}
+				
+	*/
 	
-		
-																//Iteration
+
+	//Iteration
+	///ELTensors XandDX(CellX, dx, dy, dz, Volfn[0][0][0], Eli, Aatten[0][0][0], myfile);
+	
+
 	for (int t = 0; t != T; t++) {
 		for (int x = 1; x != nuframesx; x++) {
 			for (int y = 1; y != nuframesy; y++) {
@@ -213,29 +227,36 @@ int main() {
 
 
 
-					std::cout << "this works for cell" ;
+					std::cout << "ln 225: Cell Initialization worked" ;
 
-					for (int i = 3; i != 9; ++i) {
+/// Object initialization
+ELTensors	XandDX(CellX, dx, dy, dz, Volfn[x][y][z], Eli, Ahat[x][y][z], myfile);
+//std::cout << "Object initialization worked." << std::endl;
+			
+///Initializing all the tensors and their derivatives
+XandDX.TensorsandDerivTensorsInitialization();
 
-						
+				for (int i = 3; i != 5; ++i) {
 
-						ELTensors XandDX( CellX, dx, dy, dz, Volfn[x][y][z], Eli, Aatten[x][y][z] ,myfile);
+				
+//run the finite difference calculation for embedding map X
+embeddingmapXnplus1[i][x][y][z] = embeddingmapXn[i][x][y][z] + dt*(XandDX.ELequation(i));
 
-					//	std::cout << "Object initialization worked." << std::endl;
+///std::cout << "Line 252 Main: EL equation worked" << std::endl;
+
+//run the finite difference calculation for volume fraction
+Volfnplus1[x][y][z] = Volfn[x][y][z] + dt*(XandDX.VolfraIter());
+					
 
 
-						//run the finite difference calculation for embedding map X
-						embeddingmapXnplus1[i][x][y][z] = embeddingmapXn[i][x][y][z] + dt*(XandDX.ELequation(i));
-						//std::cout << "It worked." << std::endl;
+//prepare for the next step
+embeddingmapXn[i][x][y][z] = embeddingmapXnplus1[i][x][y][z];
+Volfn[x][y][z] = std::min(std::max(Volfnplus1[x][y][z], fmin[x][y][z]), fmax[x][y][z]);
 
-						//run the finite difference calculation for volume fraction
-						Volfnplus1[x][y][z] = Volfn[x][y][z] + dt*(XandDX.VolfraIter());
-						//std::cout << Volfnplus1[x][y][z];
-						//prepare for the next step
-						embeddingmapXn[i][x][y][z] = embeddingmapXnplus1[i][x][y][z];
-						Volfn[x][y][z] = std::min(std::max(Volfnplus1[x][y][z], fmin[x][y][z]), fmax[x][y][z]);
 
-					}
+//std::cout << "line 273 MG It worked." << x<<y<<z<< i<< std::endl;
+					
+				}
 
 					std::cout <<  ','<<"z is" <<','<< z<< ',' <<"y" <<y << ',' <<"x"<< x<<'\n';
 				}
@@ -247,8 +268,13 @@ int main() {
 
 	
 	}
+										
+	std::cout << '\n'<< "done  iteration";
+
+/*
 
 	//Printing the Volume fraction and Diffustion tensor results into a CSV file
+	
 	std::ofstream myfile2("DTIresults.csv");
 	//Creating diffusion tensor and printing it
 
@@ -284,7 +310,8 @@ int main() {
 	}
 	
 	myfile.close();
-	myfile2.close();
 	
+	myfile2.close();
+	*/
 	
 }

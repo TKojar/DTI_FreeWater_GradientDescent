@@ -1,6 +1,7 @@
 /** \file ELInitialization.h
 \brief C++ header file initializing physical variables.
-Copyright 2016 by Tomas Kojar
+
+Copyright 2016 by Andrew Colinet,Tomas Kojar
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided
 that the following conditions are met:
@@ -35,10 +36,10 @@ private:
 	
 
 public:
-	int nuframesx;
-	int nuframesy;
-	int nuframesz;
-	int Graddirections;
+	int nframesx;
+	int nframesy;
+	int nframesz;
+	int GradDirections;
 	int bval;
 	std::vector< std::vector<std::vector<std::vector<double>>> > Aatten;
 
@@ -55,7 +56,7 @@ public:
 		int xnframesx,
 		int xnframesy,
 		int xnframesz,
-		int xGraddirections,
+		int xGradDirections,
 		int xbval,
 		std::vector<std::vector<double, std::allocator<double>>, std::allocator<std::vector<double, std::allocator<double>>>> xDiffGradDir,
 		double xalpha,
@@ -64,7 +65,7 @@ public:
 		double xlmax,
 		std::vector<int> xWM,
 		std::vector<int> xWTR
-		) : nuframesx(xnframesx), nuframesy(xnframesy), nuframesz(xnframesz), Graddirections(xGraddirections), bval(xbval), DiffGradDir(xDiffGradDir), alpha(xalpha), Awater(xAwater), lmin(xlmin), lmax(xlmax), WM(xWM), WTR(xWTR) {};
+		) : nframesx(xnframesx), nframesy(xnframesy), nframesz(xnframesz), GradDirections(xGradDirections), bval(xbval), DiffGradDir(xDiffGradDir), alpha(xalpha), Awater(xAwater), lmin(xlmin), lmax(xlmax), WM(xWM), WTR(xWTR) {};
 
 	/// Copy constructor.
 
